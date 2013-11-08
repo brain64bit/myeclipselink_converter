@@ -76,33 +76,32 @@ public class CustomConverter implements Converter{
 	    }
     }
 
-	@SuppressWarnings("null")
     @Override
     public Object convertDataValueToObjectValue(Object dataValue, Session session) {
-		if (dataValue == null) {
-			return null;
-		} else if (dataValue instanceof PGgeometry) {
+		if (dataValue instanceof PGgeometry) {
 			return ((PGgeometry) dataValue).getGeometry();
-		} else if (dataValue instanceof PGobject) {
-			String data = ((PGobject) dataValue).getValue().replace("[{}]", "");
-			Set<String> dataSet = StringUtils.commaDelimitedListToSet(data);
-			if(dataSet !=null || !dataSet.isEmpty()){
-				Object firstElement = dataSet.toArray()[0];
-				try{
-					Long.parseLong(firstElement.toString());
-					Set<Long> coll = new HashSet<Long>();
-					for (String val : dataSet) {
-	                    coll.add(Long.parseLong(val));
+		} else if (dataValue instanceof Jdbc4Array) {
+			Object[] data = null;
+            try {
+	            data = (Object[]) ((Jdbc4Array) dataValue).getArray();
+	            Object first = data[0];
+	            if(first instanceof Long){
+	            	Set<Long> coll = new HashSet<Long>();
+	            	for (Object o : data) {
+	                    coll.add((Long) o);
                     }
-					return coll;
-				}catch(NumberFormatException nfe){
-					Set<String> coll = new HashSet<String>();
-					for (String val : dataSet) {
-	                    coll.add(val);
+	            	return coll;
+	            }else if(first instanceof String){
+	            	Set<String> coll = new HashSet<String>();
+	            	for (Object o : data) {
+	                    coll.add(o.toString());
                     }
-					return coll;
-				}
-			}
+	            	return coll;
+	            }
+            } catch (SQLException e) {
+	            // TODO Auto-generated catch block
+	            e.printStackTrace();
+            }
 			return null;
 		} else {
 			return null;
